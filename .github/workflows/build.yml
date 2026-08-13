@@ -12,25 +12,10 @@ jobs:
       - name: Kodu indir
         uses: actions/checkout@v4
 
-      - name: Python kur
-        uses: actions/setup-python@v5
+      - name: Buildozer ile derle
+        uses: ArtemSBulgakov/buildozer-action@v1
         with:
-          python-version: "3.11"
-
-      - name: Sistem bağımlılıklarını kur
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip \
-            autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
-            libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-
-      - name: Buildozer kur
-        run: pip install --upgrade buildozer cython==0.29.36
-
-      - name: APK derle (debug)
-        run: buildozer -v android debug
-        env:
-          ANDROID_ACCEPT_SDK_LICENSE: "y"
+          workdir: .
 
       - name: APK'yı yükle (indirilebilir dosya olarak)
         uses: actions/upload-artifact@v4
