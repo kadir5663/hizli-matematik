@@ -12,10 +12,11 @@ jobs:
       - name: Kodu indir
         uses: actions/checkout@v4
 
-      - name: Buildozer ile derle
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          workdir: .
+      - name: Buildozer Docker imajı ile APK derle
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}":/home/user/hostcwd \
+            kivy/buildozer android debug
 
       - name: APK'yı yükle (indirilebilir dosya olarak)
         uses: actions/upload-artifact@v4
