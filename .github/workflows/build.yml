@@ -27,11 +27,12 @@ jobs:
       - name: Buildozer kur
         run: pip install --upgrade buildozer cython==0.29.36 virtualenv
 
-      - name: python-for-android'i indir ve bozuk pip komutunu düzelt
+      - name: python-for-android'i indir ve venv/pip sorununu düzelt
         run: |
           git clone --depth 1 -b master https://github.com/kivy/python-for-android p4a-src
+          sed -i "s/python -m venv venv/virtualenv venv/" p4a-src/pythonforandroid/build.py
           sed -i "s/pip install -U pip/python -m pip install -U pip/" p4a-src/pythonforandroid/build.py
-          grep -n "python -m pip install -U pip" p4a-src/pythonforandroid/build.py
+          grep -n "virtualenv venv\|python -m pip install -U pip" p4a-src/pythonforandroid/build.py
 
       - name: APK derle (lisansları otomatik kabul et)
         run: yes | buildozer -v android debug
