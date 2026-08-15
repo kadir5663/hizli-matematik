@@ -27,8 +27,13 @@ jobs:
       - name: Buildozer kur
         run: pip install --upgrade buildozer cython==0.29.36 virtualenv
 
+      - name: Bozuk pip sürümünü engelle
+        run: echo "pip!=24.2" > /tmp/pip-constraints.txt
+
       - name: APK derle (lisansları otomatik kabul et)
         run: yes | buildozer -v android debug
+        env:
+          PIP_CONSTRAINT: /tmp/pip-constraints.txt
 
       - name: APK'yı yükle (indirilebilir dosya olarak)
         uses: actions/upload-artifact@v4
