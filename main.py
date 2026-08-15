@@ -29,7 +29,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.core.audio import SoundLoader
 from kivy.animation import Animation
-from kivy.metrics import sp
+from kivy.metrics import sp, dp
 
 # ----------------------------------------------------------------------
 # Genel ayarlar
@@ -319,6 +319,29 @@ def spawn_flying_text(screen, start_pos, text, color=(1, 0.85, 0.2, 1)):
 
 
 # ----------------------------------------------------------------------
+# Yardımcı: otomatik satır kaydıran, içeriğe göre boyu ayarlanan etiket
+# ----------------------------------------------------------------------
+
+def wrapped_label(text, font_size, color=(1, 1, 1, 1), bold=False, halign="left"):
+    """Metin uzunsa satır kaydırır, kutunun boyu içeriğe göre büyür.
+    Bu, sabit yükseklikli etiketlerde metinlerin birbirinin üzerine
+    binmesini önler."""
+    lbl = Label(
+        text=text, font_size=font_size, color=color, bold=bold,
+        size_hint_y=None, halign=halign, valign="middle",
+    )
+
+    def _sync_text_size(instance, width):
+        instance.text_size = (width, None)
+
+    def _sync_height(instance, texture_size):
+        instance.height = texture_size[1] + dp(6)
+
+    lbl.bind(width=_sync_text_size, texture_size=_sync_height)
+    return lbl
+
+
+# ----------------------------------------------------------------------
 # Ortak: temalı arka planlı ekran taban sınıfı
 # ----------------------------------------------------------------------
 
@@ -588,9 +611,9 @@ class ShopScreen(ThemedScreen):
         self.items_box.clear_widgets()
 
         for theme_name, theme in THEMES.items():
-            row = BoxLayout(orientation="horizontal", size_hint_y=None, height=70, spacing=8)
+            row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(76), spacing=10)
 
-            swatch = Label(text="", size_hint=(0.15, 1))
+            swatch = Label(text="", size_hint=(0.16, 1))
             with swatch.canvas.before:
                 Color(*theme["bg"])
                 swatch_rect = Rectangle(pos=swatch.pos, size=swatch.size)
@@ -602,15 +625,16 @@ class ShopScreen(ThemedScreen):
             selected = app.data["selected_theme"] == theme_name
             info = Label(
                 text=f"{theme_name}\n{'Sahipsin' if owned else str(theme['price']) + ' coin'}",
-                font_size=sp(14), size_hint=(0.5, 1),
+                font_size=sp(14), size_hint=(0.49, 1), halign="left", valign="middle",
             )
+            info.bind(size=lambda inst, size: setattr(inst, "text_size", size))
             row.add_widget(info)
 
             if selected:
-                action_btn = Button(text="SEÇİLİ", font_size=sp(13), size_hint=(0.35, 1),
+                action_btn = Button(text="SECILI", font_size=sp(13), size_hint=(0.35, 1),
                                      background_color=(0.3, 0.3, 0.3, 1), disabled=True)
             elif owned:
-                action_btn = Button(text="SEÇ", font_size=sp(13), size_hint=(0.35, 1),
+                action_btn = Button(text="SEC", font_size=sp(13), size_hint=(0.35, 1),
                                      background_color=(0.25, 0.45, 0.75, 1))
                 action_btn.bind(on_release=lambda inst, t=theme_name: self.select_theme(t))
             else:
@@ -622,18 +646,19 @@ class ShopScreen(ThemedScreen):
             self.items_box.add_widget(row)
 
         self.items_box.add_widget(
-            Label(text="JOKERLER", font_size=sp(16), bold=True, size_hint_y=None, height=34)
+            wrapped_label("JOKERLER", font_size=sp(17), bold=True, halign="left")
         )
         for key, label_text in JOKER_LABELS.items():
-            row = BoxLayout(orientation="horizontal", size_hint_y=None, height=60, spacing=8)
+            row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(70), spacing=10)
             info = Label(
                 text=f"{label_text}\nStok: {app.data['jokers'].get(key, 0)}",
-                font_size=sp(14), size_hint=(0.65, 1),
+                font_size=sp(14), size_hint=(0.62, 1), halign="left", valign="middle",
             )
+            info.bind(size=lambda inst, size: setattr(inst, "text_size", size))
             row.add_widget(info)
             buy_btn = Button(
-                text=f"+{JOKER_PACK_SIZE} ({JOKER_PRICES[key]} coin)", font_size=sp(12),
-                size_hint=(0.35, 1), background_color=(0.55, 0.4, 0.15, 1),
+                text=f"+{JOKER_PACK_SIZE}\n({JOKER_PRICES[key]} coin)", font_size=sp(12),
+                size_hint=(0.38, 1), background_color=(0.55, 0.4, 0.15, 1), halign="center",
             )
             buy_btn.bind(on_release=lambda inst, k=key: self.buy_joker(k))
             row.add_widget(buy_btn)
@@ -700,12 +725,11 @@ class AchievementsScreen(ThemedScreen):
             is_unlocked = ach["id"] in unlocked
             icon = "[Acik]" if is_unlocked else "[Kilitli]"
             color = (0.3, 0.9, 0.3, 1) if is_unlocked else (0.6, 0.6, 0.6, 1)
-            label = Label(
-                text=f"{icon} {ach['title']}\n{ach['desc']}",
-                font_size=sp(14), color=color,
-                size_hint_y=None, height=60,
+            item = wrapped_label(
+                f"{icon} {ach['title']}\n{ach['desc']}",
+                font_size=sp(15), color=color,
             )
-            self.items_box.add_widget(label)
+            self.items_box.add_widget(item)
 
 
 # ----------------------------------------------------------------------
@@ -739,8 +763,8 @@ class StatsScreen(ThemedScreen):
         stats = data["stats"]
 
         def add_line(text, size=16, bold=False):
-            lbl = Label(text=text, font_size=size, bold=bold, size_hint_y=None, height=32)
-            self.content.add_widget(lbl)
+            item = wrapped_label(text, font_size=sp(size), bold=bold)
+            self.content.add_widget(item)
 
         add_line(f"Oyuncu: {data['name']}", 18, True)
         add_line(f"Coin: {data['coins']}")
@@ -774,7 +798,7 @@ class GameScreen(ThemedScreen):
         root = BoxLayout(orientation="vertical", padding=24, spacing=8)
 
         top_row = BoxLayout(orientation="horizontal", size_hint=(1, 0.09))
-        self.timer_label = Label(text="⏱️ 60", font_size=sp(20))
+        self.timer_label = Label(text="Sure: 60", font_size=sp(20))
         self.score_label = Label(text="Skor: 0", font_size=sp(20))
         self.coin_label = Label(text="Coin: 0", font_size=sp(16))
         top_row.add_widget(self.timer_label)
@@ -809,9 +833,9 @@ class GameScreen(ThemedScreen):
         root.add_widget(submit_btn)
 
         joker_row = BoxLayout(orientation="horizontal", size_hint=(1, 0.09), spacing=6)
-        self.freeze_btn = Button(text="⏸️ Dondur", font_size=sp(11))
+        self.freeze_btn = Button(text="Dondur", font_size=sp(11))
         self.freeze_btn.bind(on_release=lambda *a: self.use_joker("dondur"))
-        self.skip_btn = Button(text="⏭️ Atla", font_size=sp(11))
+        self.skip_btn = Button(text="Atla", font_size=sp(11))
         self.skip_btn.bind(on_release=lambda *a: self.use_joker("atla"))
         self.hint_btn = Button(text="Ipucu", font_size=sp(11))
         self.hint_btn.bind(on_release=lambda *a: self.use_joker("ipucu"))
@@ -890,7 +914,7 @@ class GameScreen(ThemedScreen):
         self.current_level = 1
 
         self.score_label.text = "Skor: 0"
-        self.timer_label.text = f"⏱️ {self.time_left}"
+        self.timer_label.text = f"Sure: {self.time_left}"
         self.timer_label.color = (1, 1, 1, 1)
         self.coin_label.text = f"Coin: {app.data['coins']}"
         self.level_label.text = "Seviye 1"
@@ -928,7 +952,7 @@ class GameScreen(ThemedScreen):
         if self.frozen:
             return
         self.time_left -= 1
-        self.timer_label.text = f"⏱️ {max(self.time_left, 0)}"
+        self.timer_label.text = f"Sure: {max(self.time_left, 0)}"
         if self.time_left <= 0:
             self.end_game()
 
