@@ -13,6 +13,7 @@ orientation = portrait
 fullscreen = 0
 
 icon.filename = %(source.dir)s/icon.png
+p4a.source_dir = %(source.dir)s/p4a-src
 
 android.permissions = INTERNET
 android.api = 33
