@@ -30,9 +30,41 @@ jobs:
       - name: python-for-android'i indir ve venv/pip sorununu düzelt
         run: |
           git clone --depth 1 -b master https://github.com/kivy/python-for-android p4a-src
-          sed -i "s/python -m venv venv/virtualenv venv/" p4a-src/pythonforandroid/build.py
-          sed -i "s/pip install -U pip/python -m pip install -U pip/" p4a-src/pythonforandroid/build.py
-          grep -n "virtualenv venv\|python -m pip install -U pip" p4a-src/pythonforandroid/build.py
+          python3 - << 'EOF'
+          path = "p4a-src/pythonforandroid/build.py"
+          with open(path) as f:
+              content = f.read()
+
+          old = """    with current_directory(join(ctx.build_dir)):
+              shprint(host_python, '-m', 'venv', 'venv')
+
+              # Prepare base environment and upgrade pip:
+              base_env = dict(copy.copy(os.environ))
+              base_env["PYTHONPATH"] = ctx.get_site_packages_dir(arch)
+              info('Upgrade pip to latest version')
+              shprint(sh.bash, '-c', (
+                  "source venv/bin/activate && pip install -U pip"
+              ), _env=copy.copy(base_env))"""
+
+          new = """    with current_directory(join(ctx.build_dir)):
+              shprint(sh.Command("virtualenv"), "--python", ctx.hostpython, "venv")
+
+              # Prepare base environment and upgrade pip:
+              base_env = dict(copy.copy(os.environ))
+              base_env["PYTHONPATH"] = ctx.get_site_packages_dir(arch)
+              info('Upgrade pip to latest version')
+              shprint(sh.bash, '-c', (
+                  "source venv/bin/activate && python -m pip install -U pip"
+              ), _env=copy.copy(base_env))"""
+
+          if old not in content:
+              raise SystemExit("PATTERN NOT FOUND")
+
+          content = content.replace(old, new)
+          with open(path, "w") as f:
+              f.write(content)
+          print("Patched successfully")
+          EOF
 
       - name: APK derle (lisansları otomatik kabul et)
         run: yes | buildozer -v android debug
