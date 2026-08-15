@@ -27,13 +27,14 @@ jobs:
       - name: Buildozer kur
         run: pip install --upgrade buildozer cython==0.29.36 virtualenv
 
-      - name: Bozuk pip sürümünü engelle
-        run: echo "pip!=24.2" > /tmp/pip-constraints.txt
+      - name: python-for-android'i indir ve bozuk pip komutunu düzelt
+        run: |
+          git clone --depth 1 -b master https://github.com/kivy/python-for-android p4a-src
+          sed -i "s/pip install -U pip/python -m pip install -U pip/" p4a-src/pythonforandroid/build.py
+          grep -n "python -m pip install -U pip" p4a-src/pythonforandroid/build.py
 
       - name: APK derle (lisansları otomatik kabul et)
         run: yes | buildozer -v android debug
-        env:
-          PIP_CONSTRAINT: /tmp/pip-constraints.txt
 
       - name: APK'yı yükle (indirilebilir dosya olarak)
         uses: actions/upload-artifact@v4
