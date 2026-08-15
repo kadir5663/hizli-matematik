@@ -34,7 +34,9 @@ from kivy.animation import Animation
 # Genel ayarlar
 # ----------------------------------------------------------------------
 
-Window.size = (400, 700)
+from kivy.utils import platform
+if platform not in ("android", "ios"):
+    Window.size = (400, 700)
 
 DIFFICULTIES = ["Kolay", "Orta", "Zor", "Deli Modu"]
 
